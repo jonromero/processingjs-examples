@@ -1,0 +1,478 @@
+<!DOCTYPE html> 
+<html> 
+<head> 
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/> 
+  <title>Jon.IO - Weekly dive in niche programming and start ups </title> 
+  <link rel="stylesheet" href="style.css" type="text/css" /> 
+
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.6.0/jquery.min.js" type="text/javascript"></script>
+  <script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.12/jquery-ui.min.js" type="text/javascript"></script>
+
+  <script type="text/javascript">
+
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-12225850-10']);
+    _gaq.push(['_trackPageview']);
+    
+    (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+    
+  </script>
+
+</head> 
+<body>
+  <script src="processing-1.1.0.min.js" type="text/javascript"></script>
+  <script src="init_processing.js" type="text/javascript"></script>
+    <div id="header">
+	<canvas width="100%" id="particle">
+	</canvas>
+      <div class="logo">
+      </div>  
+    </div>
+
+
+  <script type="application/processing">
+    /* @pjs transparent=true; */
+
+PFont droidSans;
+ParticleSystem ps;
+ParticleSystem ps_clouds;
+
+int frame;
+
+PImage[] icons = new PImage[10];
+PImage[] clouds = new PImage[5];
+
+// Setup the Processing Canvas
+void setup(){
+    size($('canvas').width(), 450);
+    
+    icons[0] = loadImage("android.png");
+    icons[1] = loadImage("appengine.png");
+    icons[2] = loadImage("clojure.png");
+    icons[3] = loadImage("erlang.png");
+    icons[4] = loadImage("mongo.png");
+    icons[5] = loadImage("node.png");
+    icons[6] = loadImage("ruby.png");
+    icons[7] = loadImage("rails.png");
+    icons[8] = loadImage("python.png");
+    icons[9] = loadImage("sprout.png");
+
+    clouds[0]= loadImage("cloud1.png");
+    clouds[1]= loadImage("cloud2.png");
+    clouds[2]= loadImage("cloud1.png");
+    clouds[3]= loadImage("cloud2.png");
+    clouds[4]= loadImage("cloud1.png");
+	
+    frameRate(25);
+    droidSans = createFont("Droid Sans",32);
+    textFont(droidSans); 
+    
+    ps = new ParticleSystem(icons, false);  
+    ps_clouds = new ParticleSystem(clouds, true);  
+    
+    smooth(); 
+}
+
+// Main draw loop
+void draw(){
+	
+    if($("#particle").is(":visible")) {
+	size($('canvas').width(), 250);
+	
+	// Transparent canvas 
+	background(0, 0, 0, 0);
+	
+	ps.run();
+	ps_clouds.run();
+	
+	if (ps.particles.isEmpty()) {
+	    ps = new ParticleSystem(icons, false);  
+	}
+	
+	if (ps_clouds.particles.isEmpty()) {
+	    ps_clouds = new ParticleSystem(clouds, true);  
+	}
+	
+	frame++;		
+    }
+}
+
+// A simple Particle class  
+class Particle {  
+    Vector3D loc;  
+    Vector3D vel;  
+    Vector3D acc;  
+    PImage img;
+    var left = false;
+
+    float r;
+    float timer;  
+	
+    // Constructor 
+    Particle(Vector3D l, PImage p_image, var is_left, var is_cloud) {  
+	acc = new Vector3D(0.05,0,0);
+	if (is_cloud){
+	    the_vel = random(0, 2);
+	}
+	else {
+	    the_vel = random(1, 3);
+	}
+
+	vel = new Vector3D(the_vel, 0, 1);  
+	loc = l.copy();
+
+	r = 10.0;  
+	timer = 1550.0;
+	img = p_image;
+	left = is_left;
+    }  
+    
+    void run() {  
+	update();  
+	render();  
+    }  
+    
+    // Method to update location  
+    void update() {  
+	if (left){
+	    loc.sub(vel); 
+	}
+	else {
+	    loc.add(vel); 	    
+	}
+	
+	timer -= 1.0;  
+    }  
+    
+    // Method to display  
+    void render() {  
+	image(img, loc.x,loc.y);
+    }  
+    
+    // Is the particle still useful?  
+    boolean dead() {  
+	if (timer <= 0.0) {  
+	    return true;  
+	} else {  
+	    return false;  
+	}  
+    }
+}  
+
+  
+class ParticleSystem {  
+	
+    ArrayList particles;    // An arraylist for all the particles  
+    Vector3D origin;        // An origin point for where particles are birthed  
+        
+    ParticleSystem(PImage[] p_images, var is_clouds) {  
+	particles = new ArrayList();
+	var lefty;
+
+	if (lefty) {
+	    origin = new Vector3D(0, 0, 0);
+	}
+	else {
+	    origin = new Vector3D(width, 0, 0);
+	}
+
+	for (int i = 0; i < p_images.length; i++) {  
+	    var dice = random(-20, 20);
+	    var topped;
+	    
+	    if (is_clouds) {
+		topped = random(-10, 40);
+	    }
+	    else {
+		topped = random(-10, 150);
+	    }
+
+	    if (dice > 0) {
+		origin = new Vector3D(width+random(0,50), topped, 1);
+		lefty = true;
+	    }
+	    else {
+		origin = new Vector3D(random(-200,0), topped, 1);
+		lefty = false;
+	    }
+
+	    particles.add(new Particle(origin, p_images[i], lefty, is_clouds)); 
+	}  
+    }  
+    
+	void run() {  
+		// Cycle through the ArrayList backwards b/c we are deleting  
+		for (int i = particles.size()-1; i >= 0; i--) {  
+			Particle p = (Particle) particles.get(i);  
+			p.run();  
+			if (p.dead()) {  
+				particles.remove(i);  
+			}  
+		}  
+	}  
+	
+	void addParticle(PImage a_image, Vector3D vel) {  
+		particles.add(new Particle(origin, vel, a_image));  
+	}  
+		
+	// A method to test if the particle system still has particles  
+	boolean dead() {  
+		if (particles.isEmpty()) {  
+			return true;  
+		} else {  
+			return false;  
+		}  
+	}  
+	
+}  
+
+public class Vector3D {  
+	public float x;  
+	public float y;  
+	public float z;  
+	
+	Vector3D(float x_, float y_, float z_) {  
+		x = x_; y = y_; z = z_;  
+	}  
+	
+	Vector3D(float x_, float y_) {  
+		x = x_; y = y_; z = 0f;  
+	}  
+    
+	Vector3D() {  
+		x = 0f; y = 0f; z = 0f;  
+	}  
+	
+	public Vector3D copy() {  
+		return new Vector3D(x,y,z);  
+	}  
+	
+	public Vector3D copy(Vector3D v) {  
+		return new Vector3D(v.x, v.y,v.z);  
+	}  
+    
+	public void add(Vector3D v) {  
+		x += v.x;  
+		y += v.y;  
+		z += v.z;  
+	}  
+
+	public void sub(Vector3D v) {  
+		x -= v.x;  
+		y -= v.y;  
+		z -= v.z;  
+	}  
+	
+	public Vector3D add(Vector3D v1, Vector3D v2) {  
+		Vector3D v = new Vector3D(v1.x + v2.x,v1.y + v2.y, v1.z + v2.z);  
+		return v;  
+	}  	
+}  
+</script>
+
+  <div id="main"> 
+    <h1>Programming, startups and kick-ass developers</h1> 
+    <img src="images/screen1.png" alt="A sample of what the news letter looks like in Mutt"/> 
+    <p>One weekly email, full of programming news, guest posts from Rockstar developers and rising startups. Oh, and no spam!</p>
+
+<!-- Begin MailChimp Signup Form -->
+<script type="text/javascript">
+// delete this script tag and use a "div.mce_inline_error{ XXX !important}" selector
+// or fill this in and it will be inlined when errors are generated
+var mc_custom_error_style = '';
+</script>
+<div id="mc_embed_signup">
+
+<form action="http://jon.us2.list-manage.com/subscribe/post?u=d41a019257dd51ec51a105e74&amp;id=2666a11fbd" method="post" id="mc-embedded-subscribe-form" name="mc-embedded-subscribe-form" class="validate" target="_blank">
+<fieldset>
+<p>Enter your email and you'll receive one email per week - You can unsubscribe any time.</p>
+<div class="mc-field-group">
+<label id="byebye" for="mce-EMAIL">Your email here </label>
+<input onclick="$('#byebye')[0].innerHTML='';" type="text" value="" name="EMAIL" class="required email" id="mce-EMAIL">
+</div>
+
+		<div id="mce-responses">
+			<div class="response" id="mce-error-response" style="display:none"></div>
+			<div class="response" id="mce-success-response" style="display:none"></div>
+		</div>
+		<div><input type="submit" value="Subscribe" name="subscribe" id="mc-embedded-subscribe" class="btn"></div>
+	</fieldset>	
+</form>
+</div>
+<script type="text/javascript">
+var fnames = new Array();var ftypes = new Array();fnames[0]='EMAIL';ftypes[0]='email';
+try {
+    var jqueryLoaded=jQuery;
+    jqueryLoaded=true;
+} catch(err) {
+    var jqueryLoaded=false;
+}
+var head= document.getElementsByTagName('head')[0];
+if (!jqueryLoaded) {
+    var script = document.createElement('script');
+    script.type = 'text/javascript';
+    script.src = 'http://ajax.googleapis.com/ajax/libs/jquery/1.4.4/jquery.min.js';
+    head.appendChild(script);
+    if (script.readyState && script.onload!==null){
+        script.onreadystatechange= function () {
+              if (this.readyState == 'complete') mce_preload_check();
+        }    
+    }
+}
+var script = document.createElement('script');
+script.type = 'text/javascript';
+script.src = 'http://downloads.mailchimp.com/js/jquery.form-n-validate.js';
+head.appendChild(script);
+var err_style = '';
+try{
+    err_style = mc_custom_error_style;
+} catch(e){
+    err_style = 'margin: 1em 0 0 0; padding: 1em 0.5em 0.5em 0.5em; background: ERROR_BGCOLOR none repeat scroll 0% 0%; font-weight: bold; float: left; z-index: 1; width: 80%; -moz-background-clip: -moz-initial; -moz-background-origin: -moz-initial; -moz-background-inline-policy: -moz-initial; color: ERROR_COLOR;';
+}
+var head= document.getElementsByTagName('head')[0];
+var style= document.createElement('style');
+style.type= 'text/css';
+if (style.styleSheet) {
+  style.styleSheet.cssText = '.mce_inline_error {' + err_style + '}';
+} else {
+  style.appendChild(document.createTextNode('.mce_inline_error {' + err_style + '}'));
+}
+head.appendChild(style);
+setTimeout('mce_preload_check();', 250);
+
+var mce_preload_checks = 0;
+function mce_preload_check(){
+    if (mce_preload_checks>40) return;
+    mce_preload_checks++;
+    try {
+        var jqueryLoaded=jQuery;
+    } catch(err) {
+        setTimeout('mce_preload_check();', 250);
+        return;
+    }
+    try {
+        var validatorLoaded=jQuery("#fake-form").validate({});
+    } catch(err) {
+        setTimeout('mce_preload_check();', 250);
+        return;
+    }
+    mce_init_form();
+}
+function mce_init_form(){
+    jQuery(document).ready( function($) {
+      var options = { errorClass: 'mce_inline_error', errorElement: 'div', onkeyup: function(){}, onfocusout:function(){}, onblur:function(){}  };
+      var mce_validator = $("#mc-embedded-subscribe-form").validate(options);
+      $("#mc-embedded-subscribe-form").unbind('submit');//remove the validator so we can get into beforeSubmit on the ajaxform, which then calls the validator
+      options = { url: 'http://jon.us2.list-manage2.com/subscribe/post-json?u=d41a019257dd51ec51a105e74&id=2666a11fbd&c=?', type: 'GET', dataType: 'json', contentType: "application/json; charset=utf-8",
+                    beforeSubmit: function(){
+                        $('#mce_tmp_error_msg').remove();
+                        $('.datefield','#mc_embed_signup').each(
+                            function(){
+                                var txt = 'filled';
+                                var fields = new Array();
+                                var i = 0;
+                                $(':text', this).each(
+                                    function(){
+                                        fields[i] = this;
+                                        i++;
+                                    });
+                                $(':hidden', this).each(
+                                    function(){
+                                        if (fields.length == 2) fields[2] = {'value':1970};//trick birthdays into having years
+                                    	if ( fields[0].value=='MM' && fields[1].value=='DD' && fields[2].value=='YYYY' ){
+                                    		this.value = '';
+									    } else if ( fields[0].value=='' && fields[1].value=='' && fields[2].value=='' ){
+                                    		this.value = '';
+									    } else {
+	                                        this.value = fields[0].value+'/'+fields[1].value+'/'+fields[2].value;
+	                                    }
+                                    });
+                            });
+                        return mce_validator.form();
+                    }, 
+                    success: mce_success_cb
+                };
+      $('#mc-embedded-subscribe-form').ajaxForm(options);      
+      
+    });
+}
+function mce_success_cb(resp){
+    $('#mce-success-response').hide();
+    $('#mce-error-response').hide();
+    if (resp.result=="success"){
+        $('#mce-'+resp.result+'-response').show();
+        $('#mce-'+resp.result+'-response').html(resp.msg);
+        $('#mc-embedded-subscribe-form').each(function(){
+            this.reset();
+    	});
+    } else {
+        var index = -1;
+        var msg;
+        try {
+            var parts = resp.msg.split(' - ',2);
+            if (parts[1]==undefined){
+                msg = resp.msg;
+            } else {
+                i = parseInt(parts[0]);
+                if (i.toString() == parts[0]){
+                    index = parts[0];
+                    msg = parts[1];
+                } else {
+                    index = -1;
+                    msg = resp.msg;
+                }
+            }
+        } catch(e){
+            index = -1;
+            msg = resp.msg;
+        }
+        try{
+            if (index== -1){
+                $('#mce-'+resp.result+'-response').show();
+                $('#mce-'+resp.result+'-response').html(msg);            
+            } else {
+                err_id = 'mce_tmp_error_msg';
+                html = '<div id="'+err_id+'" style="'+err_style+'"> '+msg+'</div>';
+                
+                var input_id = '#mc_embed_signup';
+                var f = $(input_id);
+                if (ftypes[index]=='address'){
+                    input_id = '#mce-'+fnames[index]+'-addr1';
+                    f = $(input_id).parent().parent().get(0);
+                } else if (ftypes[index]=='date'){
+                    input_id = '#mce-'+fnames[index]+'-month';
+                    f = $(input_id).parent().parent().get(0);
+                } else {
+                    input_id = '#mce-'+fnames[index];
+                    f = $().parent(input_id).get(0);
+                }
+                if (f){
+                    $(f).append(html);
+                    $(input_id).focus();
+                } else {
+                    $('#mce-'+resp.result+'-response').show();
+                    $('#mce-'+resp.result+'-response').html(msg);
+                }
+            }
+        } catch(e){
+            $('#mce-'+resp.result+'-response').show();
+            $('#mce-'+resp.result+'-response').html(msg);
+        }
+    }
+}
+
+</script>
+<!--End mc_embed_signup-->
+
+  </div> 
+  <div id="footer">
+    <p>Built using Clojure and MailChimp. Looked after by <a href="http://jon.is.emotionull.com">John Vlachoyiannis</a> and <a href="http://6pna.com/">Panos Papadopoulos</a>. Design by <a href="http://twitter.com/maria_nas">Maria Nasioti.</a></p>
+  </div>
+
+  
+</body> 
+</html> 

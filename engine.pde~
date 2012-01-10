@@ -1,0 +1,18 @@
+// comments go here
+
+void setup()
+{
+	size(500, 500);
+	background(#00ff00);
+	fill(255);
+	frameRate(25);
+	
+	PFont fontA = loadFont("courier");
+	textFont(fontA, 14);  
+}
+
+void draw(){  
+	// transparent 
+	//background(0, 0, 0, 0);	
+  	text("Hello Peoplez of Europe",20,20);
+}
